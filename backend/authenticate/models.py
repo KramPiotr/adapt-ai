@@ -22,7 +22,7 @@ class CustomUserManager(BaseUserManager):
 
 class CustomUser(AbstractBaseUser):
     email = models.EmailField(unique=True)
-    username = models.CharField(max_length=150, unique=True)
+    username = models.CharField(max_length=150, unique=True)  # Ensure usernames are unique
     login_code = models.CharField(max_length=6, blank=True, null=True)
     code_expiry_time = models.DateTimeField(blank=True, null=True)
 
