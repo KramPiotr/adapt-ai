@@ -6,7 +6,7 @@ WORKDIR /backend
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
     build-essential \
-    default-libmysqlclient-dev \
+    libpq-dev \
     python3-dev \
     curl \
     && rm -rf /var/lib/apt/lists/*
@@ -22,3 +22,5 @@ RUN chown -R root:root /backend
 RUN chmod +x docker-entrypoint.sh
 
 EXPOSE 8000
+
+ENTRYPOINT ["/backend/docker-entrypoint.sh"]
