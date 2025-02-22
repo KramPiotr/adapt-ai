@@ -10,7 +10,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 
-DEBUG = True # False in production
+DEBUG = False # False in production
 
 ALLOWED_HOSTS = ["*"] # Only the frontend application need to have access in production
 
@@ -22,14 +22,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'authenticate',
-    'djoser',
-    'rest_framework',
-    'corsheaders',
 
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -116,47 +112,26 @@ STATIC_URL = 'api/static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
-
-CORS_ORIGIN_ALLOW_ALL = True
-
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
-    # 'DEFAULT_PERMISSION_CLASSES': (
-    #         'rest_framework.permissions.IsAuthenticated',
-    # ),
-    # 'DEFAULT_RENDERER_CLASSES': (
-    #     'rest_framework.renderers.JSONRenderer',
-    # )
-}
-
-DJOSER = {
-    "USER_CREATE_PASSWORD_RETYPE" : True,
-    "SEND_ACTIVATION_EMAIL" : True,
-    "SEND_CONFIRMATION_EMAIL" : False,
-    "SET_PASSWORD_RETYPE" : True,
-    "PASSWORD_RESET_CONFIRM_RETYPE" : True,
-    "PASSWORD_CHANGED_EMAIL_CONFIRMATION" : False,
-    "ACTIVATION_URL" : os.getenv("ACTIVATION_URL"),
-    "PASSWORD_RESET_CONFIRM_URL" : os.getenv("PASSWORD_RESET_CONFIRM_URL"),
-    "EMAIL_FRONTEND_PROTOCOL" : os.getenv("EMAIL_FRONTEND_PROTOCOL"),
-    "EMAIL_FRONTEND_DOMAIN" : os.getenv("EMAIL_FRONTEND_DOMAIN"),
-    "EMAIL_FRONTEND_SITE_NAME" : "AdaptAI",
-    'SERIALIZERS' : {
-        'user_create' : 'djoser.serializers.UserCreateSerializer',
-        'current_user' : 'djoser.serializers.UserSerializer',
-        'user_delete' : 'djoser.serializers.UserDeleteSerializer',
-    }
-}
-
 SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ("JWT",),
     'ACCESS_TOKEN_LIFETIME' : timedelta(days=30),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True
 }
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    ),
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
+    ) if not DEBUG else (
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    )
+}
+
+
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
