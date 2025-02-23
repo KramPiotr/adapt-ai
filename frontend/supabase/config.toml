@@ -1,0 +1,29 @@
+
+project_id = "uvpopbenjmnkjzjdlsnw"
+
+[api]
+enabled = true
+
+[analytics]
+enabled = false
+
+[auth]
+enabled = true
+
+[realtime]
+enabled = true
+
+[storage]
+enabled = true
+
+[functions.text-to-speech]
+verify_jwt = true
+
+[functions.speech-to-text]
+verify_jwt = true
+
+[functions.voice-call]
+verify_jwt = true
+
+[functions.vertex-ai]
+verify_jwt = true
