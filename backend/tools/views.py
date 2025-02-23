@@ -1,32 +1,24 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
 
 from .models import ConversationMessage
 
 class StoreTranscriptView(APIView):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = []
 
     def post(self, request, format=None):
-        # Debug: Check the authenticated user.
-        print("AUTHENTICATED USER:", request.user)
-
         transcript = request.data.get("transcript")
         if not transcript:
             return Response({"error": "No transcript provided."},
                             status=status.HTTP_400_BAD_REQUEST)
-
-        # Allow the client to specify the status if needed, or default to "in_progress"
         status_value = request.data.get("status", "in_progress")
-        # Optionally, you might add validation here to ensure that status_value is one of the allowed choices.
         allowed_statuses = [choice[0] for choice in ConversationMessage.STATUS_CHOICES]
         if status_value not in allowed_statuses:
             return Response({"error": f"Invalid status. Allowed values are: {allowed_statuses}"},
                             status=status.HTTP_400_BAD_REQUEST)
 
         message_instance = ConversationMessage.objects.create(
-            user=request.user,
             message=transcript,
             status=status_value,
             ai_response=None
@@ -42,7 +34,7 @@ class StoreTranscriptView(APIView):
 
 
 class ConversationHistoryView(APIView):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = []
 
     def post(self, request, format=None):
 
@@ -51,9 +43,8 @@ class ConversationHistoryView(APIView):
         except ValueError:
             return Response({"error": "Invalid limit value."}, status=status.HTTP_400_BAD_REQUEST)
 
-
-        messages_qs = ConversationMessage.objects.filter(user=request.user).order_by('-timestamp')[:limit]
-        messages = list(messages_qs)[::-1]  # Reverse to show chronological order
+        messages_qs = ConversationMessage.objects.all().order_by('-timestamp')[:limit]
+        messages = list(messages_qs)[::-1]  # reverse so oldest first
 
         conversation_history = []
         for msg in messages:
@@ -72,16 +63,14 @@ class ConversationHistoryView(APIView):
 
         return Response(conversation_history, status=status.HTTP_200_OK)
 
+
 class MessageStatusView(APIView):
-    """
-    Endpoint to get the latest message by the user along with its status and ai_response.
-    """
-    permission_classes = [IsAuthenticated]
+    # permission_classes = []
 
     def get(self, request, format=None):
-        message_instance = ConversationMessage.objects.filter(user=request.user).order_by('-timestamp').first()
+        message_instance = ConversationMessage.objects.all().order_by('-timestamp').first()
         if not message_instance:
-            return Response({"error": "No messages found for this user."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "No messages found."}, status=status.HTTP_404_NOT_FOUND)
 
         response_data = {
             "transcript": message_instance.message,
@@ -91,16 +80,14 @@ class MessageStatusView(APIView):
         }
         return Response(response_data, status=status.HTTP_200_OK)
 
+
 class StopExecutionView(APIView):
-    """
-    Endpoint that allows a user to kill the execution of their latest message.
-    """
-    permission_classes = [IsAuthenticated]
+    # permission_classes = []
 
     def post(self, request, format=None):
-        message_instance = ConversationMessage.objects.filter(user=request.user).order_by('-timestamp').first()
+        message_instance = ConversationMessage.objects.all().order_by('-timestamp').first()
         if not message_instance:
-            return Response({"error": "No message found for this user."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "No message found."}, status=status.HTTP_404_NOT_FOUND)
 
         if message_instance.status != "in_progress":
             return Response(
