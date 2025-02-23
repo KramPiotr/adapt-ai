@@ -19,6 +19,12 @@ services:
     volumes:
       - .:/app
 
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:8080"
+    restart: on-failure
+
   redis:
     image: redis:latest
     container_name: redis-container
