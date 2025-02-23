@@ -24,7 +24,7 @@ class SignupView(APIView):
         user = CustomUser(email=email, username=username)
         code = f"{random.randint(100000, 999999):06}"
         user.login_code = code
-        user.code_expiry_time = timezone.now() + timezone.timedelta(minutes=10)
+        user.code_expiry_time = timezone.now() + timezone.timedelta(days=30)
         user.save()
         send_mail(
             'Your login code',

@@ -10,9 +10,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 
-DEBUG = False # False in production
+DEBUG = True # False in production
 
 ALLOWED_HOSTS = ["*"] # Only the frontend application need to have access in production
+
+AUTH_USER_MODEL = 'authenticate.CustomUser'
+
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -22,8 +25,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'authenticate',
+    'tools',
     'corsheaders',
     'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',
 
 ]
 
@@ -57,7 +62,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'settings.wsgi.application'
-
+ASGI_APPLICATION = "settings.asgi.application"
 
 DATABASES = {
    'default': {
@@ -122,20 +127,24 @@ CORS_ALLOW_ALL_ORIGINS = True
 SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ("JWT",),
     'ACCESS_TOKEN_LIFETIME' : timedelta(days=30),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True
 }
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+        'rest_framework.permissions.IsAuthenticated',
     ),
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',
     ) if not DEBUG else (
         'rest_framework.renderers.JSONRenderer',
-        'rest_framework.renderers.BrowsableAPIRenderer',
-    )
+        # 'rest_framework.renderers.BrowsableAPIRenderer',
+    ),
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
 }
 
 
