@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "celery>=5.4.0",
+    "channels>=4.2.0",
     "cors>=1.0.1",
     "django>=5.1.6",
     "django-cors-headers>=4.7.0",
