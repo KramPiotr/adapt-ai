@@ -3,9 +3,9 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from .models import ConversationMessage
+from .tasks import process_message_and_update
 
 class StoreTranscriptView(APIView):
-    # permission_classes = []
 
     def post(self, request, format=None):
         transcript = request.data.get("transcript")
@@ -24,6 +24,8 @@ class StoreTranscriptView(APIView):
             ai_response=None
         )
 
+        process_message_and_update.delay(message_instance.id)
+
         data = {
             "id": message_instance.id,
             "transcript": message_instance.message,
@@ -34,7 +36,6 @@ class StoreTranscriptView(APIView):
 
 
 class ConversationHistoryView(APIView):
-    # permission_classes = []
 
     def post(self, request, format=None):
 
@@ -65,7 +66,6 @@ class ConversationHistoryView(APIView):
 
 
 class MessageStatusView(APIView):
-    # permission_classes = []
 
     def get(self, request, format=None):
         message_instance = ConversationMessage.objects.all().order_by('-timestamp').first()
@@ -82,7 +82,6 @@ class MessageStatusView(APIView):
 
 
 class StopExecutionView(APIView):
-    # permission_classes = []
 
     def post(self, request, format=None):
         message_instance = ConversationMessage.objects.all().order_by('-timestamp').first()

@@ -142,6 +142,7 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [],
 }
 
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
