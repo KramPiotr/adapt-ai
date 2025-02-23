@@ -60,7 +60,6 @@ export const useAudioHandler = () => {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
-                  Authorization: `JWT ${accessToken}`,
                 },
                 body: JSON.stringify({
                   transcript: sttData?.text,
@@ -81,7 +80,6 @@ export const useAudioHandler = () => {
                       method: "GET",
                       headers: {
                         "Content-Type": "application/json",
-                        Authorization: `JWT ${accessToken}`,
                       },
                     }
                   );
@@ -209,7 +207,6 @@ export const useAudioHandler = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `JWT ${accessToken}`,
         },
       });
       console.log("MediaRecorder stopped");
