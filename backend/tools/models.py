@@ -14,5 +14,4 @@ class ConversationMessage(models.Model):
     ai_response = models.TextField(null=True, blank=True)
 
     def __str__(self):
-        # Now just print a truncated version of the message.
         return f"{self.message[:50]}"

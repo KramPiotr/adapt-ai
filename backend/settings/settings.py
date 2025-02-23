@@ -14,7 +14,7 @@ DEBUG = True # False in production
 
 ALLOWED_HOSTS = ["*"] # Only the frontend application need to have access in production
 
-AUTH_USER_MODEL = 'authenticate.CustomUser'
+# AUTH_USER_MODEL = 'authenticate.CustomUser'
 
 
 INSTALLED_APPS = [
@@ -24,7 +24,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'authenticate',
+    # 'authenticate',
     'tools',
     'corsheaders',
     'rest_framework',
@@ -68,7 +68,6 @@ DATABASES = {
    'default': {
        'ENGINE': 'django.db.backends.postgresql',
        'NAME': os.getenv('DB_NAME'),
-       'HOST': os.getenv('DB_HOST'),
        'USER': os.getenv('DB_USER'),
        'PASSWORD': os.getenv('DB_PASSWORD'),
        'HOST': os.getenv('DB_HOST', 'localhost'),

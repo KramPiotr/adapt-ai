@@ -20,7 +20,6 @@ ENV PATH="/backend/.venv/bin:$PATH"
 
 RUN chown -R root:root /backend
 RUN chmod +x docker-entrypoint.sh
+RUN chmod +x wait-for-it.sh
 
 EXPOSE 8000
-
-ENTRYPOINT ["/backend/docker-entrypoint.sh"]
