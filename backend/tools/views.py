@@ -44,11 +44,16 @@ class StoreTranscriptView(APIView):
 class ConversationHistoryView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, format=None):
+    def post(self, request, format=None):
 
-        messages_qs = ConversationMessage.objects.filter(user=request.user).order_by('-timestamp')[:10]
-        messages = list(messages_qs)[::-1]  # Reverse to get chronological order.
+        try:
+            limit = int(request.data.get("limit", 10))
+        except ValueError:
+            return Response({"error": "Invalid limit value."}, status=status.HTTP_400_BAD_REQUEST)
 
+
+        messages_qs = ConversationMessage.objects.filter(user=request.user).order_by('-timestamp')[:limit]
+        messages = list(messages_qs)[::-1]  # Reverse to show chronological order
 
         conversation_history = []
         for msg in messages:
