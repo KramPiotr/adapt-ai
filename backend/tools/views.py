@@ -73,6 +73,8 @@ class MessageStatusView(APIView):
         response_data = {
             "transcript": message_instance.message,
             "status": message_instance.status,
+            "scene": message_instance.scene,
+            "agent_state": message_instance.ai_action_log,
             "ai_response": message_instance.ai_response,
             "timestamp": message_instance.timestamp,
         }
