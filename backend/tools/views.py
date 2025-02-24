@@ -36,16 +36,14 @@ class StoreTranscriptView(APIView):
 
 
 class ConversationHistoryView(APIView):
-
-    def post(self, request, format=None):
-
+    def get(self, request, format=None):
         try:
-            limit = int(request.data.get("limit", 10))
+            limit = int(request.query_params.get("limit", 10))
         except ValueError:
             return Response({"error": "Invalid limit value."}, status=status.HTTP_400_BAD_REQUEST)
 
         messages_qs = ConversationMessage.objects.all().order_by('-timestamp')[:limit]
-        messages = list(messages_qs)[::-1]  # reverse so oldest first
+        messages = list(messages_qs)[::-1]  # Reverse so oldest first
 
         conversation_history = []
         for msg in messages:

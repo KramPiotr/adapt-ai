@@ -137,12 +137,12 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.JSONRenderer',
     ) if not DEBUG else (
         'rest_framework.renderers.JSONRenderer',
-        # 'rest_framework.renderers.BrowsableAPIRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
     ),
     'DEFAULT_AUTHENTICATION_CLASSES': [],
 }
 
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_BROKER_URL = 'redis://redis:6379/1'
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

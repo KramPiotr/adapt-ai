@@ -37,11 +37,11 @@ class ConversationMessage(models.Model):
 
     message = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='in_progress')
-    scene = models.CharField(max_length=20, choices=SCENE_CHOICES, default='None')
+    status = models.CharField(max_length=255, choices=STATUS_CHOICES, default='in_progress')
+    scene = models.CharField(max_length=255, choices=SCENE_CHOICES, default='None')
     ai_response = models.TextField(null=True, blank=True)
 
-    ai_action_log = models.CharField(max_length=20, choices=TOOLS_CHOICES, default='init-agent-flow')
+    ai_action_log = models.CharField(max_length=255, choices=TOOLS_CHOICES, default='init-agent-flow')
 
     def __str__(self):
         return f"{self.message[:50]}"
