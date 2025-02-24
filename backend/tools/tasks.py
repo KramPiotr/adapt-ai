@@ -11,7 +11,6 @@ import re
 
 logger = logging.getLogger(__name__)
 
-# Load environment variables
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 if not openai.api_key:
@@ -24,17 +23,22 @@ SYSTEM_PROMPT = (
     "You are an assistant that summarizes how a new user message relates to the previous conversation. "
     "Focus on key topics, continuations, or shifts in context. "
     "If history is provided below with 'HISTORY:', use it directly and do not call 'fetch_conversation_history_from_api'. "
-    "If no history is provided or you need more context beyond what’s given, you may call 'fetch_conversation_history_from_api' "
+    "If no history is provided or you need more context beyond what’s given, call 'fetch_conversation_history_from_api' "
     "with a JSON object like {'function': 'fetch_conversation_history_from_api', 'parameters': {'limit': 5}}. "
     "Provide the 'limit' parameter to specify how many recent messages to retrieve. "
     "If the history fetch fails, use the error message and proceed with what you have. "
+    "To determine the next conversation state (scene), call 'decide_next_message_state' with a JSON object like "
+    "{'function': 'decide_next_message_state', 'parameters': {'conversation_summary': 'your_summary', 'current_message': 'user_message'}}. "
+    "This will return a recommended state (e.g., 'G1', 'R2') and explanation. "
     "When you have enough information (or if no more context is available), return your summary as a **pure JSON object** "
-    "with the key 'final_answer', e.g., {\"final_answer\": \"The user asked about X, no prior context available.\"}. "
-    "If your initial summary isn’t conversational, engaging, or suitable for direct user interaction via TTS, "
-    "call 'rephrase_for_tts' with a JSON object like {'function': 'rephrase_for_tts', 'parameters': {'initial_response': 'your_summary'}}. "
+    "with the key 'final_answer', e.g., {\"final_answer\": \"The user asked about X, next step is Y.\"}. "
+    "If your initial summary isn’t conversational, engaging, or suitable for TTS, call 'rephrase_for_tts' with "
+    "{'function': 'rephrase_for_tts', 'parameters': {'initial_response': 'your_summary'}}. "
     "When you receive the rephrased response from 'rephrase_for_tts' (provided as a tool response with a 'rephrased' key), "
     "use it directly as the final answer by returning it in a JSON object like {\"final_answer\": \"rephrased_response\"}. "
-    "The final output to the user must always be conversational and engaging for TTS."
+    "Base your final answer on the scene state from 'decide_next_message_state': provide what the user should do next "
+    "or indicate if more information is needed, aligning with the scene’s purpose (e.g., G1: specific goals, R2: emotional context). "
+    "The final output must be conversational, engaging, and suitable for TTS."
     "\n\nHISTORY: "
 )
 
@@ -119,6 +123,67 @@ def rephrase_for_tts(initial_response):
     logger.info(f"Rephrased for TTS: {rephrased}")
     return rephrased
 
+def decide_next_message_state(conversation_summary: str, current_message: str) -> dict:
+    """Decides the next message state based on the previous conversation summary and current user message."""
+    system_prompt = (
+        "You are an intelligent assistant that helps decide the state of a conversation "
+        "based on comprehensive scene transition principles. "
+        "Below is a summary of the decision rules:\n\n"
+        "Comprehensive Scene Transition Principles:\n\n"
+        "1. GOAL Phase Priority Scenes:\n"
+        "   - G1: Direct-Structured Goal Scene (signals: 'I need to achieve', 'my target', 'specific results')\n"
+        "   - G2: Values-Deep-Dive Goal Scene (signals: 'really matter', 'questioning why', 'align with')\n"
+        "   - G3: Strategic-Analytical Goal Scene (signals: 'analyze', 'strategic implications', 'metrics')\n\n"
+        "2. REALITY Phase Priority Scenes:\n"
+        "   - R1: Systematic-Assessment Reality Scene (signals: 'understand exactly', 'analyze all components')\n"
+        "   - R2: Emotional-Landscape Reality Scene (signals: 'feel stuck', 'reacting the same way')\n"
+        "   - R3: Systems-Thinking Reality Scene (signals: 'everything is connected', 'ripple effects')\n\n"
+        "3. OPPORTUNITY Phase Priority Scenes:\n"
+        "   - O1: Strategic-Analytical Opportunity Scene (signals: 'evaluate options', 'strategic implications')\n"
+        "   - O2: Solution-Engineering Opportunity Scene (signals: 'concrete plan', 'make this work')\n"
+        "   - O3: Creative-Generative Opportunity Scene (signals: 'what if we', 'think differently')\n\n"
+        "4. WAY FORWARD Phase Priority Scenes:\n"
+        "   - W1: Action-Planning Way Forward Scene (signals: 'start implementing', 'clear direction')\n"
+        "   - W2: Commitment-Building Way Forward Scene (signals: 'this matters', 'make this my own')\n"
+        "   - W3: Integration-Focused Way Forward Scene (signals: 'really stick', 'fits together')\n\n"
+        "Based on the conversation history and the current message, decide which state "
+        "the next message should be and provide an explanation. "
+        "Return your answer in JSON format as follows:\n"
+        "{\"recommended_state\": \"<scene code>\", \"scene_name\": \"<descriptive name>\", "
+        "\"explanation\": \"<your explanation>\"}\n"
+    )
+
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": f"Conversation Summary:\n{conversation_summary}"},
+        {"role": "user", "content": f"Current Message:\n{current_message}"}
+    ]
+
+    try:
+        client = openai.OpenAI(api_key=openai.api_key)
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=messages,
+            temperature=0.3,
+            max_tokens=250
+        )
+        answer = response.choices[0].message.content
+    except openai.OpenAIError as e:
+        logger.error(f"OpenAI API error in decide_next_message_state: {str(e)}")
+        raise
+
+    try:
+        result = json.loads(answer)
+    except json.JSONDecodeError:
+        logger.warning(f"Failed to parse decide_next_message_state response: {answer}")
+        result = {
+            "recommended_state": "G1",
+            "scene_name": "Direct-Structured Goal Scene",
+            "explanation": "Default state due to inability to parse the API result."
+        }
+
+    return result
+
 @shared_task(bind=True, max_retries=3)
 def process_message_and_update(self, message_id):
     load_dotenv()
@@ -162,6 +227,21 @@ def process_message_and_update(self, message_id):
                         "type": "object",
                         "properties": {"initial_response": {"type": "string", "description": "The initial summary to rephrase"}},
                         "required": ["initial_response"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "decide_next_message_state",
+                    "description": "Decide the next conversation state based on summary and current message.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "conversation_summary": {"type": "string", "description": "Summary of previous conversation"},
+                            "current_message": {"type": "string", "description": "The current user message"}
+                        },
+                        "required": ["conversation_summary", "current_message"]
                     }
                 }
             }
@@ -231,6 +311,24 @@ def process_message_and_update(self, message_id):
                         "content": json.dumps({"rephrased": rephrased_response}),
                         "tool_call_id": tool_call_id
                     })
+                elif function_name == "decide_next_message_state":
+                    msg.refresh_from_db()
+                    if msg.status in ('errored', 'killed'):
+                        break
+                    msg.ai_action_log = 'scene'
+                    msg.save()
+                    conversation_summary = args.get("conversation_summary", "")
+                    current_message = args.get("current_message", msg.message)
+                    state_result = decide_next_message_state(conversation_summary, current_message)
+                    try:
+                        msg.scene = state_result["recommended_state"]  # Update the scene state
+                        msg.save()
+                    except: continue
+                    messages.append({
+                        "role": "tool",
+                        "content": json.dumps(state_result),
+                        "tool_call_id": tool_call_id
+                    })
                 else:
                     logger.warning(f"Unknown function called: {function_name}")
                     break
@@ -267,8 +365,6 @@ def process_message_and_update(self, message_id):
                         except json.JSONDecodeError:
                             logger.warning(f"Failed to parse JSON substring: {json_match.group(0)}")
                     messages.append({"role": "assistant", "content": content})
-
-
             else:
                 break
         else:

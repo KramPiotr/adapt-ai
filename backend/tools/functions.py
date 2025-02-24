@@ -7,28 +7,6 @@ import os
 import requests
 import json
 
-def fetch_conversation_history(access_token: str, num_messages: int = 10):
-    """
-    Calls the conversation history endpoint to retrieve the conversation history.
-    The HISTORY_ENDPOINT should be set as an environment variable. An access token
-    is passed in the headers and the payload contains the limit.
-    """
-    history_endpoint = "http://localhost:8000/api/tools/history/"
-    if not history_endpoint:
-        raise ValueError("HISTORY_ENDPOINT is not set in environment variables.")
-
-    headers = {
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "limit": num_messages
-    }
-    response = requests.post(history_endpoint, headers=headers, json=payload)
-    if response.status_code != 200:
-        raise Exception(f"Failed to fetch conversation history: {response.status_code} - {response.text}")
-
-    return response.json()
-
 def decide_next_message_state(conversation_summary: str, current_message: str) -> dict:
     """
     Decides the next message state based on the previous conversation summary
